@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mis Tareas · Tatiana</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; min-height: 100vh; }
+
+  .header { background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%); color: white; padding: 16px 20px 14px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.18); }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+  .header h1 { font-size: 18px; font-weight: 700; }
+  .header-sub { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+  .header-right { text-align: right; flex-shrink: 0; }
+  .date-badge { background: rgba(255,255,255,0.18); border-radius: 20px; padding: 3px 11px; font-size: 12px; display: inline-block; }
+  .sync-btn { margin-top: 6px; background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.35); border-radius: 20px; padding: 4px 12px; font-size: 11px; cursor: pointer; color: white; display: inline-block; }
+  .sync-status { font-size: 10px; opacity: 0.65; margin-top: 3px; }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 14px 14px 100px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+  .stat-card { background: white; border-radius: 12px; padding: 10px 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+  .stat-num { font-size: 22px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 10px; color: #718096; margin-top: 3px; line-height: 1.2; }
+
+  .projects-scroll, .quick-scroll { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .projects-scroll::-webkit-scrollbar, .quick-scroll::-webkit-scrollbar { display: none; }
+  .proj-tag { background: white; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 5px 13px; font-size: 12px; cursor: pointer; color: #4a5568; white-space: nowrap; flex-shrink: 0; }
+  .proj-tag.active { border-color: #1a73e8; color: #1a73e8; background: #ebf4ff; font-weight: 600; }
+  .quick-btn { background: white; border: 1.5px solid #e2e8f0; border-radius: 20px; padding: 7px 13px; font-size: 12px; cursor: pointer; color: #4a5568; white-space: nowrap; flex-shrink: 0; }
+  .quick-btn:active { border-color: #1a73e8; color: #1a73e8; background: #ebf4ff; }
+
+  .chat-history { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+  .chat-msg.user { align-items: flex-end; display: flex; flex-direction: column; }
+  .chat-msg.assistant { align-items: flex-start; display: flex; flex-direction: column; }
+  .bubble-label { font-size: 10px; color: #a0aec0; margin-bottom: 3px; }
+  .chat-msg.user .bubble { background: #1a73e8; color: white; border-radius: 18px 18px 4px 18px; max-width: 82%; padding: 10px 14px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+  .chat-msg.assistant .bubble { background: white; border: 1px solid #e8edf2; border-radius: 18px 18px 18px 4px; max-width: 96%; padding: 13px 16px; font-size: 14px; line-height: 1.7; box-shadow: 0 1px 5px rgba(0,0,0,0.07); word-break: break-word; }
+
+  .spinner-wrap { display: flex; align-items: center; gap: 9px; color: #718096; font-size: 13px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid #e2e8f0; border-top-color: #1a73e8; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .input-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e8edf2; padding: 10px 14px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 8px; align-items: flex-end; box-shadow: 0 -2px 12px rgba(0,0,0,0.08); z-index: 50; }
+  .input-bar textarea { flex: 1; border: 1.5px solid #e2e8f0; border-radius: 22px; padding: 9px 15px; font-size: 15px; font-family: inherit; resize: none; outline: none; min-height: 40px; max-height: 110px; background: #f7f9fc; transition: border-color 0.2s; }
+  .input-bar textarea:focus { border-color: #1a73e8; background: white; }
+  .send-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: #1a73e8; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px rgba(26,115,232,0.4); }
+  .send-btn:disabled { background: #a0aec0; box-shadow: none; }
+
+  .error-banner { background: #fff5f5; border: 1px solid #fed7d7; border-radius: 10px; padding: 11px 14px; margin-bottom: 12px; color: #c53030; font-size: 13px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: #a0aec0; }
+  .empty-state .icon { font-size: 38px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; }
+
+  .ai-response h2 { font-size: 15px; font-weight: 700; margin: 12px 0 4px; }
+  .ai-response h3 { font-size: 14px; font-weight: 700; margin: 10px 0 3px; color: #2d3748; }
+  .ai-response ul { padding-left: 18px; margin: 5px 0; }
+  .ai-response li { margin: 3px 0; }
+  .ai-response p { margin: 4px 0; }
+  .ai-response hr { border: none; border-top: 1px solid #e2e8f0; margin: 10px 0; }
+  .ai-response strong { font-weight: 700; }
+  .ai-response em { font-style: italic; color: #4a5568; }
+
+  @media (min-width: 640px) {
+    .header { padding: 18px 28px 16px; }
+    .header h1 { font-size: 20px; }
+    .main { padding: 18px 24px 90px; }
+    .stat-num { font-size: 26px; }
+    .stat-label { font-size: 11px; }
+    .input-bar { padding: 12px 20px; }
+    .input-bar textarea { font-size: 14px; }
+    .quick-btn, .proj-tag { font-size: 13px; padding: 7px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <h1>🌿 Mis Tareas</h1>
+      <div class="header-sub" id="sheetNames">Cargando proyectos...</div>
+    </div>
+    <div class="header-right">
+      <div class="date-badge" id="dateDisplay"></div><br>
+      <button class="sync-btn" id="syncBtn" onclick="loadAllSheets()">↻ Sync</button>
+      <div class="sync-status" id="syncStatus">Conectando...</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div id="errorBanner" class="error-banner" style="display:none"></div>
+
+  <div class="stats-row" id="statsRow" style="display:none">
+    <div class="stat-card"><div class="stat-num" id="statTotal" style="color:#1a73e8">0</div><div class="stat-label">Total tareas</div></div>
+    <div class="stat-card"><div class="stat-num" id="statProgress" style="color:#e53e3e">0</div><div class="stat-label">En progreso</div></div>
+    <div class="stat-card"><div class="stat-num" id="statDone" style="color:#38a169">0</div><div class="stat-label">Completadas</div></div>
+    <div class="stat-card"><div class="stat-num" id="statDeadline" style="color:#805ad5">0</div><div class="stat-label">Deadline &lt;30d</div></div>
+  </div>
+
+  <div class="projects-scroll" id="projectsRow" style="display:none"></div>
+
+  <div class="quick-scroll">
+    <button class="quick-btn" onclick="ask('¿En qué me debo enfocar hoy? Dame máximo 3 tareas concretas y por qué.')">🎯 ¿Enfoque hoy?</button>
+    <button class="quick-btn" onclick="ask('¿Qué tareas son urgentes esta semana en todos mis proyectos?')">🔥 Urgente</button>
+    <button class="quick-btn" onclick="ask('Dame un resumen completo de todo lo pendiente agrupado por proyecto.')">📊 Resumen</button>
+    <button class="quick-btn" onclick="ask('¿Qué tareas tienen deadline próximo? Ordénalas de más a menos urgente.')">📅 Deadlines</button>
+    <button class="quick-btn" onclick="ask('¿Qué debería pausar o delegar?')">⚡ ¿Qué delego?</button>
+    <button class="quick-btn" onclick="ask('¿Cómo va mi búsqueda de trabajo? ¿Qué aplicaciones tengo pendientes?')">💼 Jobs</button>
+  </div>
+
+  <div class="chat-history" id="chatHistory">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🔄</div>
+      <p>Conectando con tu Google Sheet...</p>
+    </div>
+  </div>
+</div>
+
+<div class="input-bar">
+  <textarea id="questionInput" placeholder="Pregúntame lo que necesites..." rows="1"
+    onkeydown="if(event.key==='Enter'&&!event.shiftKey&&window.innerWidth>640){event.preventDefault();sendQuestion()}"
+    oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,110)+'px'"></textarea>
+  <button class="send-btn" onclick="sendQuestion()" id="sendBtn">↑</button>
+</div>
+
+<script>
+const SHEET_ID = '1UBYJw5mpu_BCN-Wpc4a8PgPMS5sy3uhdIAifedwIUNM';
+const TABS = ['Reserva Natural', 'Innovaly', '+1%', 'Holistica', 'Relaciones', 'Jobs'];
+
+let allTasksData = '', activeProject = 'Todos', chatHistory = [];
+const now = new Date();
+const dias  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+document.getElementById('dateDisplay').textContent =
+  `${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]}`;
+
+function parseCSV(text) {
+  const rows = [];
+  for (const line of text.trim().split('\n')) {
+    const row = []; let inQ = false, cell = '';
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { if (inQ && line[i+1]==='"') { cell+='"'; i++; } else inQ=!inQ; }
+      else if (c === ',' && !inQ) { row.push(cell.trim()); cell=''; }
+      else cell += c;
+    }
+    row.push(cell.trim());
+    rows.push(row);
+  }
+  return rows;
+}
+
+async function fetchTab(name) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+  const res = await fetch(url, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (!text || text.includes('<!DOCTYPE')) throw new Error(`Pestaña "${name}" no accesible`);
+  return parseCSV(text);
+}
+
+function findCol(headers, ...terms) {
+  for (const t of terms) {
+    const i = headers.findIndex(h => (h||'').toLowerCase().includes(t.toLowerCase()));
+    if (i >= 0) return i;
+  }
+  return -1;
+}
+
+async function loadAllSheets() {
+  const btn = document.getElementById('syncBtn');
+  btn.textContent = '↻ ...';
+  hideError();
+
+  try {
+    const results = await Promise.all(
+      TABS.map(name =>
+        fetchTab(name).then(rows => ({ name, rows, ok: true })).catch(e => ({ name, rows: [], ok: false, err: e.message }))
+      )
+    );
+
+    let combined = '', total = 0, inProg = 0, done = 0, dead30 = 0;
+    const today = new Date(), in30 = new Date();
+    in30.setDate(today.getDate() + 30);
+    const loaded = [], errors = [];
+
+    results.forEach(({ name, rows, ok, err }) => {
+      if (!ok) { errors.push(`${name}: ${err}`); return; }
+      if (rows.length < 2) return;
+      const headers = rows[0];
+      const data = rows.slice(1).filter(r => r.some(c => c && c.trim()));
+      if (!data.length) return;
+      loaded.push(name);
+      total += data.length;
+      const cSt = findCol(headers,'estado','columna','status','column');
+      const cDl = findCol(headers,'deadline','fecha','due','vencimiento');
+      combined += `\n\n=== ${name} ===\nColumnas: ${headers.join(' | ')}\n`;
+      data.forEach(r => {
+        combined += r.join(' | ') + '\n';
+        const st = (r[cSt]||'').toLowerCase();
+        if (st.includes('progress')||st.includes('progreso')) inProg++;
+        if (st.includes('done')||st.includes('completad')||st.includes('listo')) done++;
+        if (cDl>=0 && r[cDl]) {
+          let d = new Date(r[cDl]);
+          if (isNaN(d)) { const p=(r[cDl]||'').split('.'); if(p.length===3) d=new Date(`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`); }
+          if (!isNaN(d) && d>=today && d<=in30) dead30++;
+        }
+      });
+    });
+
+    if (!combined.trim()) throw new Error(errors.join('; ') || 'Pestañas vacías');
+
+    allTasksData = combined;
+    document.getElementById('sheetNames').textContent = loaded.join(' · ');
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statProgress').textContent = inProg;
+    document.getElementById('statDone').textContent = done;
+    document.getElementById('statDeadline').textContent = dead30;
+    document.getElementById('statsRow').style.display = 'grid';
+
+    const pr = document.getElementById('projectsRow');
+    pr.style.display = 'flex'; pr.innerHTML = '';
+    ['Todos',...loaded].forEach(n => {
+      const b = document.createElement('button');
+      b.className = 'proj-tag'+(n==='Todos'?' active':'');
+      b.textContent = n;
+      b.onclick = () => { document.querySelectorAll('.proj-tag').forEach(x=>x.classList.remove('active')); b.classList.add('active'); activeProject=n; };
+      pr.appendChild(b);
+    });
+
+    const h=now.getHours(), m=String(now.getMinutes()).padStart(2,'0');
+    document.getElementById('syncStatus').textContent = `${h}:${m} · ${total} tareas`;
+    btn.textContent = '✓ Sync';
+    setTimeout(()=>btn.textContent='↻ Sync', 2500);
+
+    if (chatHistory.length===0) {
+      document.getElementById('emptyState').innerHTML = '<div class="icon">💬</div><p>Listo. Pregúntame lo que necesites.</p>';
+      ask('¿En qué me debo enfocar hoy? Dame un briefing rápido, máximo 5 puntos clave de todos mis proyectos.');
+    }
+  } catch(e) {
+    showError(`Error al cargar: ${e.message}`);
+    document.getElementById('syncStatus').textContent = 'Error';
+    btn.textContent = '↻ Reintentar';
+    document.getElementById('emptyState').innerHTML = '<div class="icon">⚠️</div><p>Error al cargar el Sheet.</p>';
+  }
+}
+
+function ask(q) { document.getElementById('questionInput').value=q; sendQuestion(); }
+
+async function sendQuestion() {
+  const input = document.getElementById('questionInput');
+  const question = input.value.trim();
+  if (!question) return;
+  if (!allTasksData) { showError('Primero sincroniza el Sheet.'); return; }
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  input.value = ''; input.style.height = 'auto';
+
+  const history = document.getElementById('chatHistory');
+  document.getElementById('emptyState')?.remove();
+  hideError();
+
+  const uMsg = document.createElement('div');
+  uMsg.className = 'chat-msg user';
+  uMsg.innerHTML = `<div class="bubble-label">Tú</div><div class="bubble">${escHtml(question)}</div>`;
+  history.appendChild(uMsg);
+
+  const lMsg = document.createElement('div');
+  lMsg.className = 'chat-msg assistant';
+  lMsg.innerHTML = `<div class="bubble-label">Asistente</div><div class="bubble"><div class="spinner-wrap"><div class="spinner"></div>Analizando...</div></div>`;
+  history.appendChild(lMsg);
+  lMsg.scrollIntoView({ behavior:'smooth', block:'end' });
+
+  const todayStr = `${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()} (${dias[now.getDay()]})`;
+  const pf = activeProject!=='Todos' ? `\nFILTRO: Solo proyecto "${activeProject}".` : '';
+
+  const systemPrompt = `Eres el asistente de productividad personal de Tatiana. Ella tiende a dispersarse y necesita claridad y foco concreto.
+
+Hoy: ${todayStr}
+
+Sus proyectos:
+- Reserva Natural: reserva biológica en Colombia
+- Innovaly/iCLARE: empresa de innovación
+- +1%: mejora personal / estudios
+- Holistica: bienestar
+- Relaciones: contactos y relaciones
+- Jobs: búsqueda de trabajo en Suiza (tracker; "Absage"=rechazo)
+
+TODAS las tareas actuales (Google Sheets, tiempo real):
+${allTasksData}
+${pf}
+
+Instrucciones:
+- Español, directo, sin preamble ni relleno
+- Emojis para escaneo visual rápido
+- ⚠️ para deadlines en menos de 7 días
+- Prioriza: In Progress + deadline próximo + importancia
+- Markdown limpio (##, **, listas -)
+- Sé concisa — Tatiana necesita claridad, no texto largo`;
+
+  try {
+    const res = await fetch('/.netlify/functions/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, history: chatHistory, systemPrompt })
+    });
+
+    if (!res.ok) throw new Error('Function error: ' + res.status + ' ' + res.statusText);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const answer = data.answer || 'Sin respuesta.';
+
+    chatHistory.push({ role:'user', content:question });
+    chatHistory.push({ role:'assistant', content:answer });
+    if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+
+    lMsg.querySelector('.bubble').innerHTML = `<div class="ai-response">${md(answer)}</div>`;
+  } catch(e) {
+    lMsg.querySelector('.bubble').innerHTML = `<span style="color:#e53e3e">⚠️ Error: ${escHtml(e.message)}</span>`;
+  }
+
+  btn.disabled = false;
+  lMsg.scrollIntoView({ behavior:'smooth', block:'end' });
+}
+
+function showError(msg) { const el=document.getElementById('errorBanner'); el.textContent=msg; el.style.display='block'; }
+function hideError() { document.getElementById('errorBanner').style.display='none'; }
+function escHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function md(text) {
+  return escHtml(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^---$/gm,'<hr>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g,'<ul>$1</ul>')
+    .replace(/\n\n/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+loadAllSheets();
+</script>
+</body>
+</html>
